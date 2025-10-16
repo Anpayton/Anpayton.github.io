@@ -1,275 +1,85 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Centerpiece — Drop in your photo</title>
-  <meta name="description" content="A sleek, single-file website that centers your uploaded picture with style." />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>My Cool Page</title>
   <style>
-    :root{
-      --bg-1:#0f1020; --bg-2:#1b1c3a; --accent:#7c5cff; --muted:#aab;
-      --surface: rgba(255,255,255,.08);
-    }
-    *{box-sizing:border-box}
-    html,body{height:100%}
-    body{
-      margin:0; font-family:"Inter",system-ui,-apple-system,Segoe UI,Roboto,Arial;
-      color:#e9e9f4; background: radial-gradient(1200px 800px at 20% 10%, #1b1c3a 0, transparent 60%),
-                 radial-gradient(900px 900px at 90% 30%, #2a1a6a 0, transparent 55%),
-                 linear-gradient(180deg, var(--bg-1), var(--bg-2));
-      min-height:100%; display:grid; grid-template-rows:auto 1fr auto;
-    }
-    header{
-      padding: clamp(16px, 2.5vw, 28px);
-      display:flex; align-items:center; justify-content:space-between; gap:16px;
-    }
-    .brand{font-weight:800; letter-spacing:.5px; display:flex; align-items:center; gap:10px}
-    .brand .dot{width:12px;height:12px;border-radius:50%;background:var(--accent);box-shadow:0 0 18px var(--accent)}
-    .brand span{font-size:clamp(18px,2.8vw,26px)}
-    .actions a{color:#cfcfff; text-decoration:none; padding:8px 12px; border-radius:10px; background:var(--surface); border:1px solid rgba(255,255,255,.1)}
-    .actions a:hover{background:rgba(255,255,255,.14)}
+    @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap');
 
-    /* Center stage */
-    .stage{
-      display:grid; place-items:center; padding: clamp(16px, 4vw, 40px);
+    body {
+      margin: 0;
+      font-family: 'Poppins', sans-serif;
+      background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
+      color: #fff;
+      text-align: center;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      animation: fadeIn 2s ease;
     }
-    .card{
-      width:min(1100px, 96vw); max-height: 78vh; 
-      padding: clamp(14px, 2vw, 18px); border-radius:20px; 
-      background: linear-gradient(180deg, rgba(255,255,255,.10), rgba(255,255,255,.04));
-      border:1px solid rgba(255,255,255,.18);
-      box-shadow: 0 20px 60px rgba(0,0,0,.45), inset 0 0 80px rgba(255,255,255,.05);
-      display:grid; grid-template-rows:auto 1fr auto; gap:12px;
-    }
-    .dropzone{
-      position:relative; height:100%; display:grid; place-items:center;
-      border:2px dashed rgba(255,255,255,.18); border-radius:16px; overflow:hidden;
-      transition: border-color .25s ease, background .25s ease;
-    }
-    .dropzone.drag{border-color: var(--accent); background: rgba(124,92,255,.08)}
 
-    .placeholder{ text-align:center; padding:28px; max-width:60ch; color:#cbd;}
-    .placeholder h1{font-size: clamp(22px, 3.2vw, 34px); margin:0 0 10px; font-weight:800}
-    .placeholder p{margin:0 0 18px; font-size: clamp(14px, 1.6vw, 16px);}
-    .placeholder .btns{display:flex; gap:10px; justify-content:center; flex-wrap:wrap}
-    .btn{
-      cursor:pointer; font-weight:600; border-radius:12px; padding:12px 16px; 
-      border:1px solid rgba(255,255,255,.18); background:var(--surface); color:#fff;
+    header {
+      margin-top: 80px;
+      max-width: 800px;
+      animation: slideIn 1.5s ease-out;
     }
-    .btn.primary{ background: linear-gradient(135deg, var(--accent), #00d4ff);
-      border-color: transparent; box-shadow: 0 10px 30px rgba(124,92,255,.35);
+
+    h1 {
+      font-size: 2.8em;
+      margin-bottom: 0.3em;
+      letter-spacing: 1px;
     }
-    .btn:hover{filter:brightness(1.06)}
 
-    figure{ margin:0; display:grid; place-items:center; height:100%; }
-    #preview{
-      max-width:100%; max-height: calc(78vh - 120px); object-fit:contain; 
-      border-radius:14px; box-shadow: 0 18px 40px rgba(0,0,0,.55);
-      display:none;
+    p {
+      font-size: 1.2em;
+      line-height: 1.6;
+      color: #cfd8dc;
     }
-    figcaption{ text-align:center; color:#ccd; font-size:14px; margin-top:8px; }
 
-    .controls{ display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; }
-    .left, .right{display:flex; align-items:center; gap:10px; flex-wrap:wrap}
-    input[type="text"]{ 
-      background:var(--surface); color:#fff; border:1px solid rgba(255,255,255,.18);
-      border-radius:10px; padding:10px 12px; min-width: 220px;
+    .image-container {
+      margin-top: 60px;
+      animation: fadeIn 2s ease-in;
     }
-    input::placeholder{ color:#99a } 
 
-    footer{ color:#9aa; text-align:center; padding:18px; font-size:13px }
+    img {
+      max-width: 80%;
+      height: auto;
+      border-radius: 20px;
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.6);
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
 
-    /* Light mode */
-    @media (prefers-color-scheme: light){
-      :root{ --bg-1:#f8f9ff; --bg-2:#eef0ff; --surface: rgba(0,0,0,.05); --muted:#445; }
-      body{ color:#1b1c3a; background: radial-gradient(1000px 700px at 15% 10%, #ffffff 0, transparent 60%),
-                 radial-gradient(900px 900px at 90% 30%, #dfe4ff 0, transparent 55%),
-                 linear-gradient(180deg, var(--bg-1), var(--bg-2)); }
-      .actions a{ color:#223; }
-      .placeholder{ color:#334 }
-      figcaption{ color:#556 }
-      input[type="text"]{ color:#112 }
+    img:hover {
+      transform: scale(1.05);
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8);
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    @keyframes slideIn {
+      from { transform: translateY(-30px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
     }
   </style>
 </head>
 <body>
   <header>
-    <div class="brand"><span class="dot"></span><span>Centerpiece</span></div>
-    <div class="actions">
-      <a id="downloadBtn" href="#" download="centerpiece-page.html" title="Download this page with your image embedded">Download page</a>
-    </div>
+    <h1>Welcome to My Page</h1>
+    <p>
+      This is an introduction about me or my project.  
+      You can replace this text with your own story, description, or message.  
+      Scroll down to see something awesome.
+    </p>
   </header>
 
-  <main class="stage">
-    <section class="card">
-      <div id="drop" class="dropzone" aria-label="Drop image here or use the buttons below">
-        <div class="placeholder" id="placeholder">
-          <h1>Drop your picture here</h1>
-          <p>…or click <em>Upload</em>. Your image will be perfectly centered, responsive, and looking sharp.
-            Paste with <kbd>Ctrl</kbd>+<kbd>V</kbd> works too.</p>
-          <div class="btns">
-            <button class="btn primary" id="pick">Upload image</button>
-            <button class="btn" id="sample">Use a sample</button>
-          </div>
-        </div>
-        <figure>
-          <img id="preview" alt="Your uploaded image preview" />
-        </figure>
-        <input id="file" type="file" accept="image/*" hidden />
-      </div>
-
-      <div class="controls">
-        <div class="left">
-          <label for="caption" style="opacity:.8">Caption:</label>
-          <input id="caption" type="text" placeholder="Optional caption…" />
-        </div>
-        <div class="right">
-          <button class="btn" id="fitContain" aria-pressed="true">Fit: Contain</button>
-          <button class="btn" id="fitCover">Fit: Cover</button>
-          <button class="btn" id="bgToggle">Toggle background</button>
-        </div>
-      </div>
-      <figcaption id="cap"></figcaption>
-    </section>
-  </main>
-
-  <footer>
-    Made with ❤ for your centerpiece photo. Single-file, no build tools.
-  </footer>
-
-  <script>
-    const fileInput = document.getElementById('file');
-    const pickBtn   = document.getElementById('pick');
-    const dropzone  = document.getElementById('drop');
-    const preview   = document.getElementById('preview');
-    const placeholder = document.getElementById('placeholder');
-    const captionIn = document.getElementById('caption');
-    const cap       = document.getElementById('cap');
-    const downloadBtn = document.getElementById('downloadBtn');
-    const fitContain = document.getElementById('fitContain');
-    const fitCover = document.getElementById('fitCover');
-    const sampleBtn = document.getElementById('sample');
-    const bgToggle = document.getElementById('bgToggle');
-
-    function show(imgURL, name="image"){
-      preview.src = imgURL;
-      preview.alt = name;
-      preview.style.display = 'block';
-      placeholder.style.display = 'none';
-      cap.textContent = captionIn.value || '';
-    }
-
-    function handleFiles(files){
-      const f = files && files[0];
-      if(!f) return;
-      if(!f.type.startsWith('image/')){ alert('Please choose an image file.'); return; }
-      const reader = new FileReader();
-      reader.onload = e => show(e.target.result, f.name);
-      reader.readAsDataURL(f);
-    }
-
-    // Click to pick
-    pickBtn.addEventListener('click', ()=> fileInput.click());
-    fileInput.addEventListener('change', e => handleFiles(e.target.files));
-
-    // Drag & drop
-    ;['dragenter','dragover'].forEach(ev => dropzone.addEventListener(ev, e=>{e.preventDefault(); e.dataTransfer.dropEffect='copy'; dropzone.classList.add('drag');}));
-    ;['dragleave','drop'].forEach(ev => dropzone.addEventListener(ev, e=>{dropzone.classList.remove('drag');}));
-    dropzone.addEventListener('drop', e=>{ e.preventDefault(); handleFiles(e.dataTransfer.files); });
-
-    // Paste from clipboard
-    window.addEventListener('paste', e=>{
-      const items = e.clipboardData && e.clipboardData.items;
-      if(!items) return;
-      for(const it of items){
-        if(it.type && it.type.indexOf('image') === 0){
-          const blob = it.getAsFile();
-          const reader = new FileReader();
-          reader.onload = ev => show(ev.target.result, 'pasted-image');
-          reader.readAsDataURL(blob);
-          break;
-        }
-      }
-    });
-
-    // Caption live update
-    captionIn.addEventListener('input', ()=>{ cap.textContent = captionIn.value; });
-
-    // Fit mode toggles
-    function setContain(){
-      preview.style.objectFit = 'contain';
-      fitContain.setAttribute('aria-pressed','true');
-      fitCover.setAttribute('aria-pressed','false');
-    }
-    function setCover(){
-      preview.style.objectFit = 'cover';
-      fitContain.setAttribute('aria-pressed','false');
-      fitCover.setAttribute('aria-pressed','true');
-    }
-    fitContain.addEventListener('click', setContain);
-    fitCover.addEventListener('click', setCover);
-    setContain();
-
-    // Background toggle (subtle/clear)
-    let bgAlt=false;
-    bgToggle.addEventListener('click', ()=>{
-      bgAlt=!bgAlt;
-      document.body.style.background = bgAlt
-        ? 'linear-gradient(180deg, #101316, #141821)'
-        : 'radial-gradient(1200px 800px at 20% 10%, #1b1c3a 0, transparent 60%),\
-           radial-gradient(900px 900px at 90% 30%, #2a1a6a 0, transparent 55%),\
-           linear-gradient(180deg, var(--bg-1), var(--bg-2))';
-    });
-
-    // Sample image (royalty-free tiny data URL for instant demo)
-    sampleBtn.addEventListener('click', ()=>{
-      const demo = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(`
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800">
-          <defs>
-            <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
-              <stop offset="0%" stop-color="#7c5cff"/>
-              <stop offset="100%" stop-color="#00d4ff"/>
-            </linearGradient>
-          </defs>
-          <rect width="1200" height="800" fill="#0e0f1f"/>
-          <circle cx="600" cy="400" r="260" fill="url(#g)" opacity="0.9"/>
-          <text x="50%" y="50%" text-anchor="middle" dominant-baseline="middle"
-                font-size="80" font-family="Inter,Segoe UI,Arial" fill="white" 
-                style="letter-spacing:2px">Your Photo</text>
-        </svg>`);
-      show(demo, 'sample');
-      captionIn.value = 'Sample centerpiece';
-      cap.textContent = 'Sample centerpiece';
-    });
-
-    // Download this page with the embedded data URL (if any)
-    downloadBtn.addEventListener('click', (e)=>{
-      e.preventDefault();
-      const serializer = new XMLSerializer();
-      // Inline current image data URL if present
-      const imgHTML = preview.src && preview.style.display !== 'none' 
-        ? `<img id="preview" alt="${(preview.alt||'Your uploaded image').replace(/"/g,'&quot;')}" style="max-width:100%;max-height:calc(78vh - 120px);object-fit:${getComputedStyle(preview).objectFit};border-radius:14px;box-shadow:0 18px 40px rgba(0,0,0,.55);display:block" src="${preview.src}"/>`
-        : document.getElementById('preview').outerHTML;
-
-      const template = document.documentElement.cloneNode(true);
-      // Replace the preview tag with our inlined version
-      const target = template.querySelector('#preview');
-      const holder = document.createElement('div');
-      holder.innerHTML = imgHTML;
-      target.replaceWith(holder.firstChild);
-
-      // Remove input & scripts to make a static page
-      const input = template.querySelector('#file'); input && input.remove();
-      const scripts = template.querySelectorAll('script'); scripts.forEach(s=>s.remove());
-      const data = '<!DOCTYPE html>' + serializer.serializeToString(template);
-      const blob = new Blob([data], {type:'text/html'});
-      const url = URL.createObjectURL(blob);
-      downloadBtn.href = url;
-      downloadBtn.click();
-      setTimeout(()=>URL.revokeObjectURL(url), 2000);
-    });
-  </script>
+  <div class="image-container">
+    <img src="your-image.jpg" alt="Cool Picture">
+  </div>
 </body>
 </html>
