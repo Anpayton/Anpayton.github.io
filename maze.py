@@ -1,12 +1,6 @@
-# ascii_doom_radar.py
-# ASCII Doom-style shooter with:
-# - Room-based random map (open layout)
-# - Safe player spawn (never in walls)
-# - Head-bob while walking
-# - Faster turning, smoother feel
-# - Enemy touch damage (HP drains on contact)
-# - Enemy occlusion + line-of-sight visibility
-# - Rotating minimap radar (top-left corner, follows player)
+
+# ASCII Doom style shooter with:
+
 # Python 3.10+ / Windows Terminal recommended
 
 import os, sys, math, time, msvcrt, random
