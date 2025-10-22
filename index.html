@@ -105,20 +105,6 @@
     </p>
   </header>
 
-  <div class="image-container">
-    <img src="silly andon.jpg" alt="Cool Picture">
-  </div>
-
-  <div class="image-container">
-    <img src="your-image.jpg" alt="Cool Picture">
-  </div>
-
-  <!-- Snake Game Section -->
-  <div id="gameContainer">
-    <canvas id="snakeGame" width="400" height="400"></canvas>
-  </div>
-  <div id="score">Score: 0</div>
-
   <script>
     const canvas = document.getElementById("snakeGame");
     const ctx = canvas.getContext("2d");
@@ -208,5 +194,21 @@
 
     const game = setInterval(drawGame, 100);
   </script>
+
+  <div class="image-container">
+    <img src="silly andon.jpg" alt="Cool Picture">
+  </div>
+
+  <div class="image-container">
+    <img src="your-image.jpg" alt="Cool Picture">
+  </div>
+
+  <!-- Snake Game Section -->
+  <div id="gameContainer">
+    <canvas id="snakeGame" width="400" height="400"></canvas>
+  </div>
+  <div id="score">Score: 0</div>
+
+  
 </body>
 </html>
