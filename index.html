@@ -20,6 +20,7 @@
       align-items: center;
       justify-content: flex-start;
       animation: fadeIn 2s ease;
+      overflow-x: hidden; /* keep things tidy when bouncing */
     }
 
     header {
@@ -92,6 +93,25 @@
       from { transform: translateY(-30px); opacity: 0; }
       to { transform: translateY(0); opacity: 1; }
     }
+
+    /* Secret physics button */
+    #ejectToggle {
+      position: fixed;
+      bottom: 14px;
+      right: 14px;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: radial-gradient(circle at 30% 30%, #00c6ff, #007bff);
+      box-shadow: 0 0 8px rgba(0,198,255,0.5);
+      opacity: 0.18;
+      cursor: pointer;
+      z-index: 999999;
+      transition: opacity 0.2s ease, transform 0.1s ease;
+      user-select: none;
+    }
+    #ejectToggle:hover { opacity: 0.65; transform: scale(1.05); }
+    #ejectToggle:active { transform: scale(0.95); }
   </style>
 </head>
 <body>
@@ -105,6 +125,24 @@
     </p>
   </header>
 
+  <!-- Snake Game Section -->
+  <div id="gameContainer">
+    <canvas id="snakeGame" width="400" height="400"></canvas>
+  </div>
+  <div id="score">Score: 0</div>
+
+  <div class="image-container">
+    <img src="silly andon.jpg" alt="Cool Picture">
+  </div>
+
+  <div class="image-container">
+    <img src="your-image.jpg" alt="Cool Picture">
+  </div>
+
+  <!-- tiny secret button -->
+  <div id="ejectToggle" title=" " aria-label=" "></div>
+
+  <!-- Game script (same as before, just moved below the canvas) -->
   <script>
     const canvas = document.getElementById("snakeGame");
     const ctx = canvas.getContext("2d");
@@ -167,7 +205,7 @@
 
       const newHead = { x: snakeX, y: snakeY };
 
-      // Game over
+      // Game over conditions
       if (
         snakeX < 0 || snakeX >= 400 ||
         snakeY < 0 || snakeY >= 400 ||
@@ -195,22 +233,193 @@
     const game = setInterval(drawGame, 100);
   </script>
 
-  <!-- Snake Game Section -->
-  <div id="gameContainer">
-    <canvas id="snakeGame" width="400" height="400"></canvas>
-  </div>
-  <div id="score">Score: 0</div>
+  <!-- Physics mode script -->
+  <script>
+    (function () {
+      const secret = document.getElementById('ejectToggle');
+      let physicsOn = false;
+      let rafId = null;
+      const bodies = []; // {el, x, y, w, h, vx, vy, dragging, dragDX, dragDY, lastMouseX, lastMouseY, lastMoveT}
+      const g = 1800;     // gravity px/s^2
+      const bounce = 0.35; // restitution
+      const air = 0.01;   // air drag factor
+      const maxSpeed = 4000;
+      let lastT = 0;
 
-  <div class="image-container">
-    <img src="silly andon.jpg" alt="Cool Picture">
-  </div>
+      function visible(el) {
+        const cs = getComputedStyle(el);
+        return cs.display !== 'none' && cs.visibility !== 'hidden' && el.offsetWidth && el.offsetHeight;
+      }
 
-  <div class="image-container">
-    <img src="your-image.jpg" alt="Cool Picture">
-  </div>
+      function clamp(v, min, max) { return Math.max(min, Math.min(max, v)); }
 
-  
+      function startPhysics() {
+        if (physicsOn) return;
+        physicsOn = true;
 
-  
+        // snapshot rects first to avoid cascading layout changes
+        const els = Array.from(document.body.querySelectorAll('*:not(script):not(style):not(#ejectToggle)'));
+        const targets = els.filter(e => visible(e));
+
+        const rects = targets.map(el => ({ el, rect: el.getBoundingClientRect() }));
+
+        // detach from flow by fixing positions where they currently are
+        rects.forEach(({ el, rect }) => {
+          const cs = getComputedStyle(el);
+
+          // preserve size
+          el.style.width = rect.width + 'px';
+          el.style.height = rect.height + 'px';
+
+          // promote to its own layer for smoother transforms
+          el.style.willChange = 'top,left,transform';
+
+          // set to fixed at current absolute screen position
+          el.style.position = 'fixed';
+          el.style.left = rect.left + 'px';
+          el.style.top = rect.top + 'px';
+          el.style.margin = '0'; // avoid surprises
+
+          // ensure it stays on top of doc flow
+          if (!el.style.zIndex) el.style.zIndex = 1000;
+
+          // neutralize pointer-defaults to keep dragging smooth
+          el.style.cursor = 'grab';
+          el.style.userSelect = 'none';
+
+          // Add as physics body
+          bodies.push({
+            el,
+            x: rect.left,
+            y: rect.top,
+            w: rect.width,
+            h: rect.height,
+            vx: (Math.random() - 0.5) * 300, // a little kickoff
+            vy: Math.random() * -200,
+            dragging: false,
+            dragDX: 0,
+            dragDY: 0,
+            lastMouseX: 0,
+            lastMouseY: 0,
+            lastMoveT: 0
+          });
+
+          // Prevent clicks from navigating while in physics mode
+          el.addEventListener('click', e => e.preventDefault(), true);
+
+          // Drag handling
+          el.addEventListener('pointerdown', onPointerDown);
+        });
+
+        window.addEventListener('pointermove', onPointerMove);
+        window.addEventListener('pointerup', onPointerUp);
+        window.addEventListener('resize', onResize);
+
+        lastT = performance.now();
+        rafId = requestAnimationFrame(tick);
+      }
+
+      function onPointerDown(e) {
+        const body = bodies.find(b => b.el === e.currentTarget);
+        if (!body) return;
+        body.dragging = true;
+        body.el.setPointerCapture(e.pointerId);
+        body.el.style.cursor = 'grabbing';
+        // place mouse offset
+        body.dragDX = e.clientX - body.x;
+        body.dragDY = e.clientY - body.y;
+        // zero out velocity while dragging
+        body.vx = 0; body.vy = 0;
+        body.lastMouseX = e.clientX;
+        body.lastMouseY = e.clientY;
+        body.lastMoveT = performance.now();
+        e.preventDefault();
+      }
+
+      function onPointerMove(e) {
+        const draggingBodies = bodies.filter(b => b.dragging);
+        if (draggingBodies.length === 0) return;
+
+        const now = performance.now();
+        draggingBodies.forEach(b => {
+          const prevX = b.x, prevY = b.y, prevT = b.lastMoveT;
+          b.x = e.clientX - b.dragDX;
+          b.y = e.clientY - b.dragDY;
+          // estimate velocity from pointer movement for "throw"
+          const dt = Math.max(1, now - prevT) / 1000;
+          b.vx = (b.x - prevX) / dt;
+          b.vy = (b.y - prevY) / dt;
+          b.lastMoveT = now;
+          b.lastMouseX = e.clientX;
+          b.lastMouseY = e.clientY;
+          // apply immediately
+          b.el.style.left = b.x + 'px';
+          b.el.style.top = b.y + 'px';
+        });
+      }
+
+      function onPointerUp(e) {
+        bodies.forEach(b => {
+          if (b.dragging) {
+            b.dragging = false;
+            b.el.releasePointerCapture?.(e.pointerId);
+            b.el.style.cursor = 'grab';
+            // velocities already set from last move; clamp
+            b.vx = clamp(b.vx, -maxSpeed, maxSpeed);
+            b.vy = clamp(b.vy, -maxSpeed, maxSpeed);
+          }
+        });
+      }
+
+      function onResize() {
+        // nothing special; bounds read on each tick
+      }
+
+      function tick(now) {
+        const dt = Math.min(0.033, (now - lastT) / 1000); // cap dt for stability
+        lastT = now;
+
+        const W = window.innerWidth;
+        const H = window.innerHeight;
+
+        for (const b of bodies) {
+          if (b.dragging) continue;
+
+          // physics integration
+          b.vy += g * dt;
+          // air drag (simple)
+          b.vx *= (1 - air);
+          b.vy *= (1 - air);
+
+          b.vx = clamp(b.vx, -maxSpeed, maxSpeed);
+          b.vy = clamp(b.vy, -maxSpeed, maxSpeed);
+
+          b.x += b.vx * dt;
+          b.y += b.vy * dt;
+
+          // collisions with window bounds
+          if (b.x < 0) { b.x = 0; b.vx = -b.vx * bounce; }
+          if (b.x + b.w > W) { b.x = W - b.w; b.vx = -b.vx * bounce; }
+
+          if (b.y < 0) { b.y = 0; b.vy = -b.vy * bounce; }
+          if (b.y + b.h > H) {
+            b.y = H - b.h;
+            b.vy = -b.vy * bounce;
+            // small friction on ground contact
+            b.vx *= 0.96;
+            if (Math.abs(b.vy) < 20) b.vy = 0;
+          }
+
+          // write to DOM
+          b.el.style.left = b.x + 'px';
+          b.el.style.top = b.y + 'px';
+        }
+
+        rafId = requestAnimationFrame(tick);
+      }
+
+      secret.addEventListener('click', startPhysics);
+    })();
+  </script>
 </body>
 </html>
