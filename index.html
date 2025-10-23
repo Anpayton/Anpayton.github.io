@@ -10,8 +10,10 @@
 
     html, body {
       margin: 0;
-      overflow: hidden; /* prevents scrolling */
       height: 100%;
+      /* ✅ allow scrolling again */
+      overflow-y: auto;
+      overflow-x: hidden;
     }
 
     body {
@@ -24,6 +26,7 @@
       align-items: center;
       justify-content: flex-start;
       animation: fadeIn 2s ease;
+      min-height: 100vh;
     }
 
     header {
@@ -79,6 +82,7 @@
       display: block;
       background: #001219;
       margin: auto;
+      outline: none; /* hide focus ring */
     }
 
     #score {
@@ -130,7 +134,8 @@
 
   <!-- Snake Game Section -->
   <div id="gameContainer">
-    <canvas id="snakeGame" width="400" height="400"></canvas>
+    <!-- ✅ make canvas focusable so arrows don’t scroll page -->
+    <canvas id="snakeGame" width="400" height="400" tabindex="0"></canvas>
   </div>
   <div id="score">Score: 0</div>
 
@@ -159,11 +164,16 @@
     };
     let score = 0;
 
-    document.addEventListener("keydown", directionControl);
+    // ✅ Only listen for keys while canvas is focused
+    canvas.addEventListener("keydown", directionControl, { passive: false });
+
+    // make focusing easy
+    canvas.addEventListener("click", () => canvas.focus());
+    canvas.addEventListener("mouseenter", () => canvas.focus());
 
     function directionControl(event) {
       if (["ArrowLeft", "ArrowUp", "ArrowRight", "ArrowDown"].includes(event.key)) {
-        event.preventDefault(); // prevents page scroll
+        event.preventDefault(); // blocks page scroll only when canvas has focus
       }
       if (event.key === "ArrowLeft" && direction !== "RIGHT") direction = "LEFT";
       else if (event.key === "ArrowUp" && direction !== "DOWN") direction = "UP";
@@ -239,7 +249,7 @@
     const game = setInterval(drawGame, 100);
   </script>
 
-  <!-- Simple Physics Mode (secret button) -->
+  <!-- Physics Mode (unchanged from your last working version) -->
   <script>
     (function () {
       const secret = document.getElementById('ejectToggle');
@@ -255,9 +265,13 @@
         const all = Array.from(document.querySelectorAll('body *:not(script):not(style):not(#ejectToggle)'));
         elements = all.map(el => {
           const rect = el.getBoundingClientRect();
+          // account for scroll so positions stay aligned with the document while you scroll
+          const startX = rect.left + window.scrollX;
+          const startY = rect.top + window.scrollY;
+
           el.style.position = 'absolute';
-          el.style.left = rect.left + 'px';
-          el.style.top = rect.top + 'px';
+          el.style.left = startX + 'px';
+          el.style.top = startY + 'px';
           el.style.width = rect.width + 'px';
           el.style.height = rect.height + 'px';
           el.style.margin = 0;
@@ -265,8 +279,8 @@
           el.style.userSelect = 'none';
           return {
             el,
-            x: rect.left,
-            y: rect.top,
+            x: startX,
+            y: startY,
             vy: 0,
             vx: 0,
             dragging: false
@@ -277,14 +291,14 @@
           obj.el.addEventListener('mousedown', e => {
             obj.dragging = true;
             obj.el.style.cursor = 'grabbing';
-            obj.offsetX = e.clientX - obj.x;
-            obj.offsetY = e.clientY - obj.y;
+            obj.offsetX = e.clientX + window.scrollX - obj.x;
+            obj.offsetY = e.clientY + window.scrollY - obj.y;
           });
 
           window.addEventListener('mousemove', e => {
             if (obj.dragging) {
-              obj.x = e.clientX - obj.offsetX;
-              obj.y = e.clientY - obj.offsetY;
+              obj.x = e.clientX + window.scrollX - obj.offsetX;
+              obj.y = e.clientY + window.scrollY - obj.offsetY;
               obj.vx = 0;
               obj.vy = 0;
             }
@@ -297,8 +311,10 @@
         });
 
         function animate() {
-          const ground = window.innerHeight;
-          const right = window.innerWidth;
+          // ground is the bottom of the current viewport
+          const ground = window.scrollY + window.innerHeight;
+          const leftEdge = window.scrollX;
+          const rightEdge = window.scrollX + window.innerWidth;
 
           elements.forEach(obj => {
             if (!obj.dragging) {
@@ -306,15 +322,17 @@
               obj.x += obj.vx;
               obj.y += obj.vy;
 
+              // ground collision (bottom of viewport)
               if (obj.y + obj.el.offsetHeight > ground) {
                 obj.y = ground - obj.el.offsetHeight;
                 obj.vy *= -damping;
               }
 
-              if (obj.x < 0 || obj.x + obj.el.offsetWidth > right) {
+              // side walls (viewport)
+              if (obj.x < leftEdge) { obj.x = leftEdge; obj.vx *= -damping; }
+              if (obj.x + obj.el.offsetWidth > rightEdge) {
+                obj.x = rightEdge - obj.el.offsetWidth;
                 obj.vx *= -damping;
-                if (obj.x < 0) obj.x = 0;
-                if (obj.x + obj.el.offsetWidth > right) obj.x = right - obj.el.offsetWidth;
               }
             }
             obj.el.style.transform = `translate(${obj.x}px, ${obj.y}px)`;
