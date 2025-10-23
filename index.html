@@ -8,19 +8,22 @@
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap');
 
-    body {
+    html, body {
       margin: 0;
+      overflow: hidden; /* prevents scrolling */
+      height: 100%;
+    }
+
+    body {
       font-family: 'Poppins', sans-serif;
       background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
       color: #fff;
       text-align: center;
-      min-height: 100vh;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: flex-start;
       animation: fadeIn 2s ease;
-      overflow-x: hidden; /* keep things tidy when bouncing */
     }
 
     header {
@@ -142,7 +145,7 @@
   <!-- tiny secret button -->
   <div id="ejectToggle" title=" " aria-label=" "></div>
 
-  <!-- Game script (same as before, just moved below the canvas) -->
+  <!-- Snake Game Script -->
   <script>
     const canvas = document.getElementById("snakeGame");
     const ctx = canvas.getContext("2d");
@@ -159,6 +162,9 @@
     document.addEventListener("keydown", directionControl);
 
     function directionControl(event) {
+      if (["ArrowLeft", "ArrowUp", "ArrowRight", "ArrowDown"].includes(event.key)) {
+        event.preventDefault(); // prevents page scroll
+      }
       if (event.key === "ArrowLeft" && direction !== "RIGHT") direction = "LEFT";
       else if (event.key === "ArrowUp" && direction !== "DOWN") direction = "UP";
       else if (event.key === "ArrowRight" && direction !== "LEFT") direction = "RIGHT";
@@ -205,7 +211,7 @@
 
       const newHead = { x: snakeX, y: snakeY };
 
-      // Game over conditions
+      // Game over
       if (
         snakeX < 0 || snakeX >= 400 ||
         snakeY < 0 || snakeY >= 400 ||
@@ -233,192 +239,91 @@
     const game = setInterval(drawGame, 100);
   </script>
 
-  <!-- Physics mode script -->
+  <!-- Simple Physics Mode (secret button) -->
   <script>
     (function () {
       const secret = document.getElementById('ejectToggle');
-      let physicsOn = false;
-      let rafId = null;
-      const bodies = []; // {el, x, y, w, h, vx, vy, dragging, dragDX, dragDY, lastMouseX, lastMouseY, lastMoveT}
-      const g = 1800;     // gravity px/s^2
-      const bounce = 0.35; // restitution
-      const air = 0.01;   // air drag factor
-      const maxSpeed = 4000;
-      let lastT = 0;
+      let gravityEnabled = false;
+      let elements = [];
+      let gravity = 0.8;
+      let damping = 0.8;
 
-      function visible(el) {
-        const cs = getComputedStyle(el);
-        return cs.display !== 'none' && cs.visibility !== 'hidden' && el.offsetWidth && el.offsetHeight;
-      }
+      secret.addEventListener('click', () => {
+        if (gravityEnabled) return;
+        gravityEnabled = true;
 
-      function clamp(v, min, max) { return Math.max(min, Math.min(max, v)); }
-
-      function startPhysics() {
-        if (physicsOn) return;
-        physicsOn = true;
-
-        // snapshot rects first to avoid cascading layout changes
-        const els = Array.from(document.body.querySelectorAll('*:not(script):not(style):not(#ejectToggle)'));
-        const targets = els.filter(e => visible(e));
-
-        const rects = targets.map(el => ({ el, rect: el.getBoundingClientRect() }));
-
-        // detach from flow by fixing positions where they currently are
-        rects.forEach(({ el, rect }) => {
-          const cs = getComputedStyle(el);
-
-          // preserve size
-          el.style.width = rect.width + 'px';
-          el.style.height = rect.height + 'px';
-
-          // promote to its own layer for smoother transforms
-          el.style.willChange = 'top,left,transform';
-
-          // set to fixed at current absolute screen position
-          el.style.position = 'fixed';
+        const all = Array.from(document.querySelectorAll('body *:not(script):not(style):not(#ejectToggle)'));
+        elements = all.map(el => {
+          const rect = el.getBoundingClientRect();
+          el.style.position = 'absolute';
           el.style.left = rect.left + 'px';
           el.style.top = rect.top + 'px';
-          el.style.margin = '0'; // avoid surprises
-
-          // ensure it stays on top of doc flow
-          if (!el.style.zIndex) el.style.zIndex = 1000;
-
-          // neutralize pointer-defaults to keep dragging smooth
+          el.style.width = rect.width + 'px';
+          el.style.height = rect.height + 'px';
+          el.style.margin = 0;
           el.style.cursor = 'grab';
           el.style.userSelect = 'none';
-
-          // Add as physics body
-          bodies.push({
+          return {
             el,
             x: rect.left,
             y: rect.top,
-            w: rect.width,
-            h: rect.height,
-            vx: (Math.random() - 0.5) * 300, // a little kickoff
-            vy: Math.random() * -200,
-            dragging: false,
-            dragDX: 0,
-            dragDY: 0,
-            lastMouseX: 0,
-            lastMouseY: 0,
-            lastMoveT: 0
+            vy: 0,
+            vx: 0,
+            dragging: false
+          };
+        });
+
+        elements.forEach(obj => {
+          obj.el.addEventListener('mousedown', e => {
+            obj.dragging = true;
+            obj.el.style.cursor = 'grabbing';
+            obj.offsetX = e.clientX - obj.x;
+            obj.offsetY = e.clientY - obj.y;
           });
 
-          // Prevent clicks from navigating while in physics mode
-          el.addEventListener('click', e => e.preventDefault(), true);
+          window.addEventListener('mousemove', e => {
+            if (obj.dragging) {
+              obj.x = e.clientX - obj.offsetX;
+              obj.y = e.clientY - obj.offsetY;
+              obj.vx = 0;
+              obj.vy = 0;
+            }
+          });
 
-          // Drag handling
-          el.addEventListener('pointerdown', onPointerDown);
+          window.addEventListener('mouseup', () => {
+            obj.dragging = false;
+            obj.el.style.cursor = 'grab';
+          });
         });
 
-        window.addEventListener('pointermove', onPointerMove);
-        window.addEventListener('pointerup', onPointerUp);
-        window.addEventListener('resize', onResize);
+        function animate() {
+          const ground = window.innerHeight;
+          const right = window.innerWidth;
 
-        lastT = performance.now();
-        rafId = requestAnimationFrame(tick);
-      }
+          elements.forEach(obj => {
+            if (!obj.dragging) {
+              obj.vy += gravity;
+              obj.x += obj.vx;
+              obj.y += obj.vy;
 
-      function onPointerDown(e) {
-        const body = bodies.find(b => b.el === e.currentTarget);
-        if (!body) return;
-        body.dragging = true;
-        body.el.setPointerCapture(e.pointerId);
-        body.el.style.cursor = 'grabbing';
-        // place mouse offset
-        body.dragDX = e.clientX - body.x;
-        body.dragDY = e.clientY - body.y;
-        // zero out velocity while dragging
-        body.vx = 0; body.vy = 0;
-        body.lastMouseX = e.clientX;
-        body.lastMouseY = e.clientY;
-        body.lastMoveT = performance.now();
-        e.preventDefault();
-      }
+              if (obj.y + obj.el.offsetHeight > ground) {
+                obj.y = ground - obj.el.offsetHeight;
+                obj.vy *= -damping;
+              }
 
-      function onPointerMove(e) {
-        const draggingBodies = bodies.filter(b => b.dragging);
-        if (draggingBodies.length === 0) return;
+              if (obj.x < 0 || obj.x + obj.el.offsetWidth > right) {
+                obj.vx *= -damping;
+                if (obj.x < 0) obj.x = 0;
+                if (obj.x + obj.el.offsetWidth > right) obj.x = right - obj.el.offsetWidth;
+              }
+            }
+            obj.el.style.transform = `translate(${obj.x}px, ${obj.y}px)`;
+          });
 
-        const now = performance.now();
-        draggingBodies.forEach(b => {
-          const prevX = b.x, prevY = b.y, prevT = b.lastMoveT;
-          b.x = e.clientX - b.dragDX;
-          b.y = e.clientY - b.dragDY;
-          // estimate velocity from pointer movement for "throw"
-          const dt = Math.max(1, now - prevT) / 1000;
-          b.vx = (b.x - prevX) / dt;
-          b.vy = (b.y - prevY) / dt;
-          b.lastMoveT = now;
-          b.lastMouseX = e.clientX;
-          b.lastMouseY = e.clientY;
-          // apply immediately
-          b.el.style.left = b.x + 'px';
-          b.el.style.top = b.y + 'px';
-        });
-      }
-
-      function onPointerUp(e) {
-        bodies.forEach(b => {
-          if (b.dragging) {
-            b.dragging = false;
-            b.el.releasePointerCapture?.(e.pointerId);
-            b.el.style.cursor = 'grab';
-            // velocities already set from last move; clamp
-            b.vx = clamp(b.vx, -maxSpeed, maxSpeed);
-            b.vy = clamp(b.vy, -maxSpeed, maxSpeed);
-          }
-        });
-      }
-
-      function onResize() {
-        // nothing special; bounds read on each tick
-      }
-
-      function tick(now) {
-        const dt = Math.min(0.033, (now - lastT) / 1000); // cap dt for stability
-        lastT = now;
-
-        const W = window.innerWidth;
-        const H = window.innerHeight;
-
-        for (const b of bodies) {
-          if (b.dragging) continue;
-
-          // physics integration
-          b.vy += g * dt;
-          // air drag (simple)
-          b.vx *= (1 - air);
-          b.vy *= (1 - air);
-
-          b.vx = clamp(b.vx, -maxSpeed, maxSpeed);
-          b.vy = clamp(b.vy, -maxSpeed, maxSpeed);
-
-          b.x += b.vx * dt;
-          b.y += b.vy * dt;
-
-          // collisions with window bounds
-          if (b.x < 0) { b.x = 0; b.vx = -b.vx * bounce; }
-          if (b.x + b.w > W) { b.x = W - b.w; b.vx = -b.vx * bounce; }
-
-          if (b.y < 0) { b.y = 0; b.vy = -b.vy * bounce; }
-          if (b.y + b.h > H) {
-            b.y = H - b.h;
-            b.vy = -b.vy * bounce;
-            // small friction on ground contact
-            b.vx *= 0.96;
-            if (Math.abs(b.vy) < 20) b.vy = 0;
-          }
-
-          // write to DOM
-          b.el.style.left = b.x + 'px';
-          b.el.style.top = b.y + 'px';
+          requestAnimationFrame(animate);
         }
-
-        rafId = requestAnimationFrame(tick);
-      }
-
-      secret.addEventListener('click', startPhysics);
+        animate();
+      });
     })();
   </script>
 </body>
