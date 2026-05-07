@@ -132,124 +132,9 @@
     </p>
   </header>
 
-  <!-- Snake Game Section -->
-  <div id="gameContainer">
-    <!--make canvas focusable so arrows don’t scroll page -->
-    <canvas id="snakeGame" width="400" height="400" tabindex="0"></canvas>
-  </div>
-  <div id="score">Score: 0</div>
 
-  <div class="image-container">
-    <img src="silly andon.jpg" alt="Cool Picture">
-  </div>
 
-  <div class="image-container">
-    <img src="your-image.jpg" alt="Cool Picture">
-  </div>
-
-  <!-- tiny secret button -->
-  <div id="ejectToggle" title=" " aria-label=" "></div>
-
-  <!-- Snake Game Script -->
-  <script>
-    const canvas = document.getElementById("snakeGame");
-    const ctx = canvas.getContext("2d");
-
-    const box = 20;
-    let snake = [{ x: 9 * box, y: 10 * box }];
-    let direction = null;
-    let food = {
-      x: Math.floor(Math.random() * 19 + 1) * box,
-      y: Math.floor(Math.random() * 19 + 1) * box
-    };
-    let score = 0;
-
-    // ✅ Only listen for keys while canvas is focused
-    canvas.addEventListener("keydown", directionControl, { passive: false });
-
-    // make focusing easy
-    canvas.addEventListener("click", () => canvas.focus());
-    canvas.addEventListener("mouseenter", () => canvas.focus());
-
-    function directionControl(event) {
-      if (["ArrowLeft", "ArrowUp", "ArrowRight", "ArrowDown"].includes(event.key)) {
-        event.preventDefault(); // blocks page scroll only when canvas has focus
-      }
-      if (event.key === "ArrowLeft" && direction !== "RIGHT") direction = "LEFT";
-      else if (event.key === "ArrowUp" && direction !== "DOWN") direction = "UP";
-      else if (event.key === "ArrowRight" && direction !== "LEFT") direction = "RIGHT";
-      else if (event.key === "ArrowDown" && direction !== "UP") direction = "DOWN";
-    }
-
-    function drawGame() {
-      ctx.fillStyle = "#001219";
-      ctx.fillRect(0, 0, 400, 400);
-
-      // Draw food
-      ctx.fillStyle = "#00c6ff";
-      ctx.beginPath();
-      ctx.arc(food.x + box / 2, food.y + box / 2, box / 2.2, 0, 2 * Math.PI);
-      ctx.fill();
-
-      // Draw snake
-      for (let i = 0; i < snake.length; i++) {
-        ctx.fillStyle = i === 0 ? "#00ff99" : "#00c6ff";
-        ctx.fillRect(snake[i].x, snake[i].y, box, box);
-        ctx.strokeStyle = "#0f1f27";
-        ctx.strokeRect(snake[i].x, snake[i].y, box, box);
-      }
-
-      let snakeX = snake[0].x;
-      let snakeY = snake[0].y;
-
-      if (direction === "LEFT") snakeX -= box;
-      if (direction === "UP") snakeY -= box;
-      if (direction === "RIGHT") snakeX += box;
-      if (direction === "DOWN") snakeY += box;
-
-      // Eat food
-      if (snakeX === food.x && snakeY === food.y) {
-        score++;
-        document.getElementById("score").innerText = "Score: " + score;
-        food = {
-          x: Math.floor(Math.random() * 19 + 1) * box,
-          y: Math.floor(Math.random() * 19 + 1) * box
-        };
-      } else {
-        snake.pop();
-      }
-
-      const newHead = { x: snakeX, y: snakeY };
-
-      // Game over
-      if (
-        snakeX < 0 || snakeX >= 400 ||
-        snakeY < 0 || snakeY >= 400 ||
-        collision(newHead, snake)
-      ) {
-        clearInterval(game);
-        ctx.fillStyle = "#ff4d4d";
-        ctx.font = "30px Poppins";
-        ctx.fillText("Game Over!", 110, 200);
-        return;
-      }
-
-      snake.unshift(newHead);
-    }
-
-    function collision(head, array) {
-      for (let i = 0; i < array.length; i++) {
-        if (head.x === array[i].x && head.y === array[i].y) {
-          return true;
-        }
-      }
-      return false;
-    }
-
-    const game = setInterval(drawGame, 100);
-  </script>
-
-  <!-- Physics Mode (unchanged from your last working version) -->
+  <!-- Physics Mode-->
   <script>
     (function () {
       const secret = document.getElementById('ejectToggle');
@@ -265,7 +150,7 @@
         const all = Array.from(document.querySelectorAll('body *:not(script):not(style):not(#ejectToggle)'));
         elements = all.map(el => {
           const rect = el.getBoundingClientRect();
-          // account for scroll so positions stay aligned with the document while you scroll
+
           const startX = rect.left + window.scrollX;
           const startY = rect.top + window.scrollY;
 
@@ -311,7 +196,7 @@
         });
 
         function animate() {
-          // ground is the bottom of the current viewport
+
           const ground = window.scrollY + window.innerHeight;
           const leftEdge = window.scrollX;
           const rightEdge = window.scrollX + window.innerWidth;
